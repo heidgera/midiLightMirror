@@ -1,0 +1,284 @@
+/*@font-face {
+    font-family: roboto;
+}*/
+
+html, body {
+	margin: 0;
+	color: #ddd;
+	font-family: sans-serif;
+	font-weight: lighter;
+	width:100%;
+	height:100%;
+  /*cursor: none;*/
+  z-index: -100;
+  overflow: hidden;
+}
+
+body {
+  background-color: #333;
+	--menu-hgt: 7vh;
+	--key-width: calc(90vw / 52);
+}
+
+#menuBar{
+	position: fixed;
+	top:0;
+	left: 0;
+	width: 100vw;
+	height: var(--menu-hgt);
+	border-bottom: 2px solid black;
+	z-index: 100;
+}
+
+.title {
+	position: relative;
+	font-family: monospace;
+	font-size: 1.5em;
+	float: left;
+	margin-left: 3vw;
+	height: calc(var(--menu-hgt) / 2);
+	line-height: calc(var(--menu-hgt) / 2);
+	vertical-align: middle;
+	top: calc(var(--menu-hgt) / 4);
+}
+
+.menuButton {
+	color: #000;
+	position: relative;
+	padding-left: 5px;
+	padding-right: 5px;
+	border: 1px solid #000;
+	top: calc(var(--menu-hgt) / 4);
+	height: calc(var(--menu-hgt) / 2);
+	line-height: calc(var(--menu-hgt) / 2);
+	vertical-align: middle;
+	margin-right: 3vw;
+	float: right;
+	border-radius: 5px;
+	background-color: #ccc;
+}
+
+.menuButton:active {
+	background-color: #777;
+}
+
+/*#read {
+	background-color: #7f7;
+}
+
+#write {
+	background-color: #f77;
+}
+
+#settings {
+	background-color: #77f;
+}*/
+
+#keyholder {
+	position: fixed;
+	top: var(--menu-hgt);
+	left: 0;
+	width: 100vw;
+	height: calc(2vw + var(--key-width) * 4.66 );
+	padding-top: 2vw;
+	vertical-align: text-top;
+	background-color: #222;
+	border-bottom: 2px solid #111;
+	text-align: center;
+}
+
+.key {
+	vertical-align: text-top;
+	position:relative;
+	box-sizing: border-box;
+	display: inline-block;
+	width: var(--key-width);
+	height: calc(var(--key-width) * 4.66);
+	border-radius: 5px;
+	/*border: 1px solid #777;*/
+	border-width: 1px;
+	border-style: solid;
+	border-color: #000;
+	background-color: #dcc;
+	top: 0;
+	z-index: 10;
+}
+
+.key[note$="_sharp"] {
+	z-index: 100;
+	width: calc( 2 * var(--key-width) / 3);
+	height: calc(var(--key-width) * 3);
+	margin-left: calc(-1 * var(--key-width) / 3);
+}
+
+.key[note$="_sharp"] + .key {
+	z-index: -100;
+	margin-left: calc(-1 * var(--key-width) / 3);
+}
+
+.optWindow {
+	position: fixed;
+	box-sizing: border-box;
+	--config-hgt:calc(90vh - (var(--menu-hgt) + 4vw + var(--key-width) * 4.66) );
+	top: calc(5vh + var(--menu-hgt) + 4vw + var(--key-width) * 4.66 );
+	left: 5vw;
+	width: 90vw;
+	height: var(--config-hgt);
+	border: 2px solid black;
+	border-radius: 5px;
+	background-color: #555;
+	padding: 3vw;
+}
+
+#configurator select {
+	position: relative;
+	margin-top: 2vh;
+	display: inline-block;
+	float: right;
+	margin-right: 5vw;
+}
+
+#configurator select + span {
+	float: right;
+	margin-right: 2vw;
+}
+
+.configTitle {
+	height: var(--menu-hgt);
+	line-height: var(--menu-hgt);
+	border-bottom: 1px solid black;
+}
+
+.close {
+	position: absolute;
+	top: 0;
+	right: 1vw;
+	float: right;
+	font-family: fantasy;
+	font-size: 2em;
+}
+
+#selectAll {
+	background-color: #ccc;
+}
+
+.options {
+	--opt-hgt:calc(var(--config-hgt) - var(--menu-hgt) - 10vw);
+	height: var(--opt-hgt);
+	vertical-align: top;
+	--mode-hgt: calc(var(--opt-hgt) - 5vh);
+	--mode-wid: 20vw;
+}
+
+.options > * {
+	vertical-align: top;
+}
+
+.leftOpts {
+	position: relative;
+	display: inline-block;
+	/*top: calc(var(--menu-hgt) + 5vh);
+	left: 5vw;*/
+	height: var(--mode-hgt);
+	width: var(--mode-wid);
+	border-right: 1px solid black;
+}
+
+[type='radio']{
+	margin-left: 2vw;
+	margin-right: 2vw;
+	vertical-align: middle;
+	height: calc(var(--opt-hgt) / 6);
+	line-height: calc(var(--opt-hgt) / 6);
+}
+
+#globalOpts {
+	position: relative;
+	display: inline-block;
+	padding-left: 2vw;
+	box-sizing: border-box;
+	/*margin-left: 2vw;
+	top: calc(var(--menu-hgt) + 5vh);
+	left: calc(var(--mode-wid) + 5vw);*/
+	height: var(--mode-hgt);
+	width: calc(100% - var(--mode-wid) - 2vw);
+}
+
+#globalOpts > span {
+	font-size: .7em;
+}
+
+.opts > div {
+	font-size: 1em;
+	margin-bottom: 2vh;
+	border-bottom: 1px solid black;
+}
+
+.opts {
+	height: 100%;
+	overflow-y:auto;
+}
+
+#sampleColor{
+	display: inline-block;
+	height: 2vh;
+	width: 5vw;
+	border: 1px solid black;
+}
+
+#rainbow {
+	float: right;
+}
+
+#globalOpts [type='text'][disabled] {
+	background-color: #444;
+}
+
+#rainbow + span {
+	float:right;
+}
+
+.outputOpts {
+	position: absolute;
+	width: 95%;
+	bottom: 5vh;
+}
+
+.dim {
+	position: fixed;
+	top: 0;
+	left: 0;
+	height: 100vh;
+	width: 100vw;
+	background-color: rgba(0,0,0,.5);
+}
+
+.dialog {
+	position: absolute;
+	max-width: 75vw;
+	max-height: 75vh;
+	height: 50vh;
+	width: 50vw;
+	box-sizing: border-box;
+	border: 2px solid black;
+	border-radius: 5px;
+	background-color: #555;
+	padding: 3vw;
+	--menu-hgt: 5vh;
+}
+
+.dialog .configTitle {
+	font-size: 1.5em;
+}
+
+.centered {
+	margin: auto;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+}
+
+.dialogOptions{
+	margin-top: 5vh;
+}

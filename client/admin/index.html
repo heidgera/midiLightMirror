@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8"></meta>
+  <head>
+    <title>Template</title>
+    <script src="../common/src/muse/main.js" main="src/app.js"></script>
+  	<link rel="stylesheet" href="css/style.css"></link>
+  </head>
+  <body>
+    <div id='menuBar'>
+      <span class='title'>MidiLights</span>
+      <span class='menuButton' id='read'>Open Config</span>
+      <span class='menuButton' id='write'>Save Config</span>
+      <span class='menuButton' id='settings'>Settings</span>
+    </div>
+    <div id='keyholder'>
+    </div>
+    <div id='configurator' class='optWindow' hidden>
+      <div class='configTitle'>Configuring
+        <span id='whichKeys'></span>
+
+        <span class='menuButton' id='selectAll'>Select All</span>
+        <span class='close' id='closeConfig'>X</span>
+        <select id='chords'>
+          <option>No Chords present</span>
+        </select>
+        <span>or Select Chord to Edit:</span>
+      </div>
+      <div class='options'>
+        <form class="leftOpts">
+          <p>Select Mode</p><br>
+          <!-- <input type="radio" name="mode" value="rainbow"><span>Rainbow</span><br> -->
+          <input type="radio" name="mode" value="color" checked><span>Color</span><br>
+          <input type="radio" name="mode" value="fade"><span>Fade</span><br>
+          <input type="radio" name="mode" value="pulse" id='pulseRadio'><span>Pulse</span>
+        </form>
+        <div id='globalOpts'>
+          <p>Specify Options</p>
+          <div class='opts'>
+            <div>Color:
+              <span id='sampleColor'></span>
+              <input id="rainbow" type="checkbox">
+              <span>Rainbow</span>
+            </div>
+            <span id='colorInputs'>
+              <span>R: <input type='text' id='rCol' value='0'></span>
+              <span>G: <input type='text' id='gCol' value='0'></span>
+              <span>B: <input type='text' id='bCol' value='0'></span>
+            </span>
+            <span id='colorRange' hidden>
+              <span>Min: <input type='text' id='rbowMin' value='9'></span>
+              <span>Max: <input type='text' id='rbowMax' value='96'></span>
+            </span><br><br>
+            <div>Range:</div>
+            <span>Start: <input type='text' id='rangeStart' value='45'></span>
+            <span>Distance: <input type='text' id='rangeDist' value='88'></span>
+            <span id='pulseDir'>
+              <input id="double" type="checkbox">
+              <span>Both directions</span>
+            </span><br><br>
+            <div>Time:</div>
+            <span>Total time (milliseconds): <input type='text' id='actTime'></span>
+          </div>
+        </div>
+      </div>
+      <div class='outputOpts'>
+        <span class='menuButton' id='saveClose'>Save and Close</span>
+        <span class='menuButton' id='cancel'>Cancel</span>
+        <span class='menuButton' id='saveChord'>Save as Chord</span>
+        <span class='menuButton' id='deleteChord'>Delete Chord</span>
+      </div>
+    </div>
+    <div id='settingsTab' class='optWindow' hidden>
+      <div class='configTitle'>Settings
+        <span class='close' id='closeSettings'>X</span>
+      </div>
+      <div class='options'>
+        <div class="leftOpts">
+          <p>Select Input Device</p><br>
+          <!-- <input type="radio" name="mode" value="rainbow"><span>Rainbow</span><br> -->
+          <select id='deviceDrop'>
+            <option>No Devices Present</span>
+          </select>
+        </div>
+
+      </div>
+      <div class='outputOpts'>
+        <span class='menuButton' id='saveCloseSettings'>Save and Close</span>
+        <span class='menuButton' id='cancelSettings'>Cancel</span>
+      </div>
+    </div>
+    <div class='dim' id="writeDialog" hidden>
+      <div class='dialog centered'>
+        <div class='configTitle'>How do you want to save the configuration?
+        </div>
+        <div class="dialogOptions">
+          <input type="radio" name="writeMode" value="default" checked><span>Save as Default</span><br><br>
+          <span id='replaceOpt' hidden>
+            <input type="radio" name="writeMode" value="save">
+            <span>Replace <span id='openedFile'></span><br><br></input></span>
+          </span>
+          <input type="radio" name="writeMode" value="saveAs"><span>Save as <input type='text' id='writeFile' placeholder="filename"></input></span><br>
+        </div>
+        <div class='outputOpts'>
+          <span class='menuButton' id='writeConfig'>Save</span>
+          <span class='menuButton' id='writeLoadConfig'>Save and Load</span>
+          <span class='menuButton' id='cancelWrite'>Cancel</span>
+        </div>
+      </div>
+    </div>
+    <div class='dim' id="readDialog" hidden>
+      <div class='dialog centered'>
+        <div class='configTitle'>What do you want to do?
+        </div>
+        <div class="dialogOptions">
+          <input type="radio" name="readMode" value="default" checked><span>Open Current</span><br><br>
+          <input type="radio" name="readMode" value="open">
+          <span>Open file
+            <select id='configFiles'>
+              <option>No config files present</span>
+            </select>
+          </span><br><br>
+          <input type="radio" name="readMode" value="delete">
+          <span>Delete file
+            <select id='deleteFiles'>
+              <option>No config files present</span>
+            </select>
+          </span><br>
+        </div>
+        <div class='outputOpts'>
+          <span class='menuButton' id='okayRead'>Select</span>
+          <span class='menuButton' id='cancelRead'>Cancel</span>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
