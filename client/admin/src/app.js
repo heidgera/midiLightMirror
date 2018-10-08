@@ -37,7 +37,7 @@ obtain(['µ/commandClient.js', 'µ/color.js', './src/keyboard.js'], ({ MuseContr
 
     control.onConnect = ()=> {
       console.log('Connecting to server...');
-      control.send({ adminSession: 'password' });
+      control.send('adminSession', {password: 'password'});
     };
 
     control.connect();
@@ -130,7 +130,7 @@ obtain(['µ/commandClient.js', 'µ/color.js', './src/keyboard.js'], ({ MuseContr
     µ('#read').onclick = (e)=> {
       e.preventDefault();
       //control.send({ getConfiguration: 'default' });
-      control.send({ listConfigs: true });
+      control.send('listConfigs', {list: true});
       µ('#readDialog').hidden = false;
     };
 
@@ -139,9 +139,9 @@ obtain(['µ/commandClient.js', 'µ/color.js', './src/keyboard.js'], ({ MuseContr
       let which = µ('[name="readMode"]').reduce((acc, val)=>(val.checked ? val.value : acc), null);
       if (which == 'default' || which == 'open') {
         openedFile = (which == 'default') ? 'current' : µ('#configFiles').value;
-        control.send({ getConfiguration: openedFile });
+        control.send('getConfiguration', {which:openedFile });
       } else if (which == 'delete') {
-        control.send({ deleteConfig: µ('#deleteFiles').value });
+        control.send('deleteConfig', { which: µ('#deleteFiles').value });
       }
 
       µ('#readDialog').hidden = true;
@@ -166,12 +166,12 @@ obtain(['µ/commandClient.js', 'µ/color.js', './src/keyboard.js'], ({ MuseContr
       µ('#writeDialog').hidden = true;
       let which = µ('[name="writeMode"]').reduce((acc, val)=>(val.checked ? val.value : acc), null);
       let name = (which == 'save') ? openedFile : ((which == 'saveAs') ? µ('#writeFile').value : which);
-      control.send({ setConfiguration: {
+      control.send('setConfiguration', {
         keys: keys.map(key=>key.lightStyle),
         chords: chords,
         filename: name,
         load: false,
-      }, });
+      });
     };
 
     µ('#writeLoadConfig').onclick = (e)=> {
@@ -180,12 +180,12 @@ obtain(['µ/commandClient.js', 'µ/color.js', './src/keyboard.js'], ({ MuseContr
       let which = µ('[name="writeMode"]').reduce((acc, val)=>(val.checked ? val.value : acc), null);
       let name = (which == 'save') ? openedFile : ((which == 'saveAs') ? µ('#writeFile').value : which);
       console.log(name);
-      control.send({ setConfiguration: {
+      control.send('setConfiguration',{
         keys: keys.map(key=>key.lightStyle),
         chords: chords,
         filename: name,
         load: true,
-      }, });
+      });
     };
 
     µ('#cancelWrite').onclick = (e)=> {
@@ -195,7 +195,7 @@ obtain(['µ/commandClient.js', 'µ/color.js', './src/keyboard.js'], ({ MuseContr
 
     µ('#settings').onclick = (e)=> {
       e.preventDefault();
-      control.send({ requestMIDIDevices: 'input' });
+      control.send('requestMIDIDevices', {type: 'input' });
 
       keys.deselectAll();
       µ('#settingsTab').hidden = false;
@@ -264,10 +264,10 @@ obtain(['µ/commandClient.js', 'µ/color.js', './src/keyboard.js'], ({ MuseContr
     µ('#saveCloseSettings').onclick = (e)=> {
       e.preventDefault();
 
-      control.send({ setMIDIDevice: {
+      control.send('setMIDIDevice', {
         mode: 'input',
         name: µ('#deviceDrop').value,
-      }, });
+      });
 
       closeSettings();
     };
@@ -350,20 +350,20 @@ obtain(['µ/commandClient.js', 'µ/color.js', './src/keyboard.js'], ({ MuseContr
     document.onkeypress = (e)=> {
       if (e.key == ' ') console.log('Space pressed');
       else if (e.key == 'k') {
-        control.send({ setLights: lights });
+        control.send('setLights', {order: lights});
         console.log('Sent');
       } else if (e.key == 'j') {
-        control.send({ keyMode: {
+        control.send('keyMode', {
           key: 60,
           mode: 'fade',
           color: [0, 127, 0],
-        }, });
+        });
       } else if (e.key == 'r') {
-        control.send({ keyMode: {
+        control.send('keyMode', {
           range: { low: 50, high: 59 },
           mode: 'color',
           color: [0, 0, 127],
-        }, });
+        });
       }
     };
 

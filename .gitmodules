@@ -1,0 +1,3 @@
+[submodule ".\\local\\src\\MuseServer"]
+	path = .\\local\\src\\MuseServer
+	url = https://github.com/heidgera/MuseServer

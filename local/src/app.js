@@ -3,8 +3,8 @@
 var obtains = [
   'µ/midi.js',
   './src/neopixels.js',
-  './src/server/express.js',
-  './src/server/wsServer.js',
+  './src/MuseServer/express.js',
+  './src/MuseServer/wsServer.js',
   'fs',
   'child_process',
 ];
@@ -205,58 +205,56 @@ obtain(obtains, (midi, { pixels, rainbow, Color }, { fileServer }, { wss }, fs, 
     }
   };
 
-  wss.addListener('setLights', (dataSet, data)=> {
-    if (dataSet.length == pixels.data.length) {
-      pixels.setEachRGB((val, ind)=>dataSet[ind]);
+  wss.addListener('setLights', ({details, data})=> {
+    if (data.order.length == pixels.data.length) {
+      pixels.setEachRGB((val, ind)=>data.order[ind]);
       pixels.show();
     }
   });
 
-  wss.addListener('shutdown', (dataSet, data)=> {
+  wss.addListener('shutdown', ({details, data})=> {
     pixels.setIndicator([127, 0, 0]);
-    wss.broadcast({ shutdown: true });
+    wss.broadcast('shutdown', { shutdown: true });
     setTimeout(()=> {
       exec('sudo shutdown now');
     }, 1000);
   });
 
-  wss.addListener('listConfigs', (dataSet, data, client)=> {
+  wss.addListener('listConfigs', ({details, data})=> {
     fs.readdir(configDir, (err, files) => {
       console.log(files);
-      client.sendPacket({ listConfigs: files.map((file)=>file.replace('.json', '')) });
-      if (openedFile) client.sendPacket({ currentConfig: openedFile });
+      details.from.sendPacket('listConfigs', files.map((file)=>file.replace('.json', '')));
+      if (openedFile) details.from.sendPacket('currentConfig', {which: openedFile });
     });
   });
 
-  wss.addListener('deleteConfig', (which, data, client)=> {
-    if (client === admin) {
-      fs.unlink(configDir + '/' + which + '.json', (err, files) => {
-        console.log('Deleted ' + which);
+  wss.addListener('deleteConfig', ({details, data})=> {
+    if (details.from.isAdmin) {
+      fs.unlink(configDir + '/' + data.which + '.json', (err, files) => {
+        console.log('Deleted ' + data.which);
       });
     }
   });
 
-  wss.addListener('requestMIDIDevices', (request, data, client)=> {
-    if (client === admin) {
-      var mid = (request == 'input') ? midi.in : midi.out;
-      admin.sendPacket({
-        listMIDI: {
-          which: request,
-          devices: mid.devices.map((dev)=>dev.name),
-        },
+  wss.addListener('requestMIDIDevices', ({details, data})=> {
+    if (details.from.isAdmin) {
+      var mid = (data.type == 'input') ? midi.in : midi.out;
+      details.from.sendPacket('listMIDI', {
+        which: data.type,
+        devices: mid.devices.map((dev)=>dev.name),
       });
     }
   });
 
-  wss.addListener('setMIDIDevice', (request, data, client)=> {
-    if (client === admin) {
-      var mid = (request.mode == 'input') ? midi.in : midi.out;
+  wss.addListener('setMIDIDevice', ({details, data})=> {
+    if (details.from.isAdmin) {
+      var mid = (data.mode == 'input') ? midi.in : midi.out;
       var newIn = null;
-      console.log(`Looking for ${request.name}`);
+      console.log(`Looking for ${data.name}`);
       mid.devices.forEach((el)=> {
         if (el.name == request.name && !newIn) {
           newIn = el;
-          console.log(`Connecting to ${request.name}`);
+          console.log(`Connecting to ${data.name}`);
         }
       });
       midi.in.select(newIn);
@@ -269,16 +267,17 @@ obtain(obtains, (midi, { pixels, rainbow, Color }, { fileServer }, { wss }, fs, 
     }
   });
 
-  wss.addListener('getConfiguration', (which, data, client)=> {
+  wss.addListener('getConfiguration', ({details, data})=> {
     //if (client === admin){
-    if (which == 'current') client.sendPacket({
+    //// TODO: check if this actually still works
+    if (data.which == 'current') details.from.sendObject({
       keyConfig: keyStyles,
       serverChords: chords,
     });
     else {
-      let data = fs.readFileSync(configDir + '/' + which + '.json'); //file exists, get the contents
-      var styles = JSON.parse(data);
-      client.sendPacket({
+      let datum = fs.readFileSync(configDir + '/' + data.which + '.json'); //file exists, get the contents
+      var styles = JSON.parse(datum);
+      details.from.sendObject({
         keyConfig: styles.keys,
         serverChords: styles.chords,
       });
@@ -286,10 +285,10 @@ obtain(obtains, (midi, { pixels, rainbow, Color }, { fileServer }, { wss }, fs, 
     //}
   });
 
-  wss.addListener('setConfigByName', (name, dataPack, client)=> {
-    openedFile = name;
-    let data = fs.readFileSync(configDir + '/' + name + '.json'); //file exists, get the contents
-    var styles = JSON.parse(data);
+  wss.addListener('setConfigByName', ({details, data})=> {
+    openedFile = data.name;
+    let datum = fs.readFileSync(configDir + '/' + data.name + '.json'); //file exists, get the contents
+    var styles = JSON.parse(datum);
     keyStyles = [];
     styles.keys.forEach(function (cfg, ind, arr) {
       cfg.color = new Color(cfg.color);
@@ -304,44 +303,44 @@ obtain(obtains, (midi, { pixels, rainbow, Color }, { fileServer }, { wss }, fs, 
 
     console.log('Opened ' + openedFile);
 
-    wss.broadcast({ currentConfig: openedFile });
+    wss.broadcast('currentConfig', {which: openedFile });
   });
 
-  wss.addListener('setConfiguration', (config, data, client)=> {
-    if (client === admin) {
-      if (config.load) {
+  wss.addListener('setConfiguration', ({details, data})=> {
+    if (details.from.isAdmin) {
+      if (data.load) {
         keyStyles = [];
-        config.keys.forEach(function (cfg, ind, arr) {
+        data.keys.forEach(function (cfg, ind, arr) {
           cfg.color = new Color(cfg.color);
 
           keyStyles[ind] = cfg;
         });
 
         chords = [];
-        config.chords.forEach(function (chrd, ind, arr) {
+        data.chords.forEach(function (chrd, ind, arr) {
           chords.push(new Chord(chrd.keys, chrd.config));
         });
 
-        openedFile = config.filename;
+        openedFile = data.filename;
 
-        wss.broadcast({ currentConfig: openedFile });
+        wss.broadcast('currentConfig', {which: openedFile });
       }
 
       if (!fs.existsSync(configDir)) {
         fs.mkdirSync(configDir);
       }
 
-      let file = configDir + '/' + config.filename + '.json';
+      let file = configDir + '/' + data.filename + '.json';
       console.log(file);
 
       fs.writeFileSync(file, JSON.stringify({ keys: keyStyles, chords: chords }));
     }
   });
 
-  wss.addListener('adminSession', (password, data, client)=> {
-    if (password == 'password') {
+  wss.addListener('adminSession', ({details, data})=> {
+    if (data.password == 'password') {
       console.log('admin connected');
-      admin = client;
+      details.from.isAdmin = true;
     }
   });
 
@@ -352,8 +351,9 @@ obtain(obtains, (midi, { pixels, rainbow, Color }, { fileServer }, { wss }, fs, 
     }
   };
 
-  wss.addListener('keyMode', (set, data, client)=> {
-    if (client === admin) {
+  wss.addListener('keyMode', ({details, data})=> {
+    let set = data;
+    if (details.from.isAdmin) {
       if (!set.range) {
         for (var key in set) setStyle(set, key, set.key);
       } else for (var key in set) {
@@ -382,7 +382,6 @@ obtain(obtains, (midi, { pixels, rainbow, Color }, { fileServer }, { wss }, fs, 
     midi.in.onReady = ()=> {
       var newIn = null;
       midi.in.devices.forEach((el)=> {
-        //console.log(el.name);
         if (!el.name.includes('Through') && !newIn) {
           newIn = el;
           console.log(el.name);
@@ -406,17 +405,6 @@ obtain(obtains, (midi, { pixels, rainbow, Color }, { fileServer }, { wss }, fs, 
       }
     };
 
-    /*midi.out.onReady = ()=> {
-      var newOut = null;
-      midi.out.devices.forEach((el)=> {
-        if (el.name.includes('Tesla') && !newOut) {
-          newOut = el;
-          console.log(el.name);
-        }
-      });
-      midi.out.select(newOut);
-    };*/
-
     midi.in.setNoteHandler((note, vel)=> {
       if (note >= mkOff && note < mkOff + 88) {
         //note -= 9;
@@ -425,7 +413,7 @@ obtain(obtains, (midi, { pixels, rainbow, Color }, { fileServer }, { wss }, fs, 
         //if (vel == 0) midi.out.playNote(note, 0);
 
         //if (admin) admin.sendPacket({ notePressed: { note: note, vel: vel } });
-        wss.broadcast({ notePressed: { note: note, vel: vel } });
+        wss.broadcast('notePressed', { note: note, vel: vel });
 
         var s = vel / 127.;
         noteHeld[note] = vel;

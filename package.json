@@ -1,0 +1,14 @@
+{
+  "author": "ajhg",
+  "license": "CC0-1.0",
+  "homepage": "http://re.trof.it",
+  "dependencies": {
+    "body-parser": "^1.17.1",
+    "express": "^4.15.2",
+    "express-fileupload": "^0.4.0",
+    "express-session": "^1.15.6",
+    "express-subdomain": "^1.0.5",
+    "serialport": "7.0.2",
+    "ws": "^3.1.0"
+  }
+}
