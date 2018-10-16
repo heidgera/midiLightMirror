@@ -286,8 +286,8 @@ obtain(obtains, (midi, { pixels, rainbow, Color }, { fileServer }, { wss }, fs, 
   });
 
   wss.addListener('setConfigByName', ({details, data})=> {
-    openedFile = data.name;
-    let datum = fs.readFileSync(configDir + '/' + data.name + '.json'); //file exists, get the contents
+    openedFile = data;
+    let datum = fs.readFileSync(configDir + '/' + data + '.json'); //file exists, get the contents
     var styles = JSON.parse(datum);
     keyStyles = [];
     styles.keys.forEach(function (cfg, ind, arr) {

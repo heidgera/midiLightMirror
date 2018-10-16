@@ -32,6 +32,10 @@ obtain(['µ/color.js'], ({ Color, rainbow })=> {
       mouseState = false;
     });
 
+    document.addEventListener('touchend', ()=> {
+      mouseState = false;
+    });
+
     for (let i = 0; i < 88; i++) {
       keys.push(µ('+div', holder));
       keys[i].className = 'key';
@@ -43,7 +47,7 @@ obtain(['µ/color.js'], ({ Color, rainbow })=> {
 
       //keys[i].onSelect = ()=> {};
 
-      keys[i].onmousedown = (e)=> {
+      keys[i].ontouchstart = keys[i].onmousedown = (e)=> {
         e.preventDefault();
         mouseState = true;
         if (!keys[i].selected) {
@@ -56,6 +60,14 @@ obtain(['µ/color.js'], ({ Color, rainbow })=> {
 
         console.log(keys.selectionString());
       };
+
+      document.addEventListener('touchmove', (e)=>{
+        var tch = e.targetTouches[0];
+        var el = document.elementFromPoint(tch.clientX, tch.clientY);
+        if(el == keys[i]){
+          if (mouseState) (mouseMode) ? keys[i].select() : keys[i].deselect();
+        }
+      });
 
       keys[i].onmouseover = (e)=> {
         if (mouseState) (mouseMode) ? keys[i].select() : keys[i].deselect();
