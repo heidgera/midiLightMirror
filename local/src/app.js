@@ -3,13 +3,11 @@
 var obtains = [
   'µ/midi.js',
   './src/neopixels.js',
-  './src/MuseServer/express.js',
-  './src/MuseServer/wsServer.js',
   'fs',
   'child_process',
 ];
 
-obtain(obtains, (midi, { pixels, rainbow, Color }, { fileServer }, { wss }, fs, { exec })=> {
+obtain(obtains, (midi, { pixels, rainbow, Color }, fs, { exec })=> {
   exports.app = {};
 
   pixels.init(88);
