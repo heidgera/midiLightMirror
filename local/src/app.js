@@ -1,20 +1,18 @@
 'use strict';
 
 var obtains = [
-  'µ/midi.js',
+  'µ/socket.js',
   './src/neopixels.js',
-  'fs',
   'child_process',
 ];
 
-obtain(obtains, (midi, { pixels, rainbow, Color }, fs, { exec })=> {
+obtain(obtains, (socket, { pixels, rainbow, Color }, { exec })=> {
   exports.app = {};
 
-  pixels.init(88);
+  var ws = socket.get('localhost');
+  ws.connect();
 
-  fileServer.get('/shutdownOthers', ()=> {
-    wss.broadcast({ shutdown: true });
-  });
+  pixels.init(88);
 
   var openedFile = null;
 
@@ -31,6 +29,22 @@ obtain(obtains, (midi, { pixels, rainbow, Color }, fs, { exec })=> {
   var admin = null;
 
   var noteHeld = [];
+
+  ws.onconnect = ()=>{
+    console.log('connected to server');
+  }
+
+  ws.addListener('notePressed', ({note, vel})=>{
+    if (note >= mkOff && note < mkOff + 88) {
+      var s = vel / 127.;
+      noteHeld[note] = vel;
+
+      chords.forEach((chrd, i)=>chrd.check(note, vel));
+
+      setLightsFromConfig(keyStyles[note - mkOff], s, note - mkOff);
+
+    }
+  })
 
   var Chord = function (cKeys, config) {
     this.keys = cKeys;
@@ -75,29 +89,6 @@ obtain(obtains, (midi, { pixels, rainbow, Color }, fs, { exec })=> {
   };
 
   var chords = [];
-
-  var conf = require('os').homedir() + '/.midiLight.json';
-
-  var configDir = require('os').homedir() + '/midiLightConfigs';
-  var settingsDir = require('os').homedir() + '/midiLightSettings';
-
-  var defaultConf = configDir + 'default.json';
-
-  if (fs.existsSync(conf)) {
-    let data = fs.readFileSync(conf); //file exists, get the contents
-    var styles = JSON.parse(data);
-    keyStyles = [];
-    styles.keys.forEach(function (style, ind, arr) {
-      style.color = new Color(style.color);
-
-      keyStyles[ind] = style;
-    });
-
-    chords = [];
-    styles.chords.forEach(function (chrd, ind, arr) {
-      chords.push(new Chord(chrd.keys, chrd.config));
-    });
-  }
 
   var holdColor = [];
 
@@ -203,143 +194,33 @@ obtain(obtains, (midi, { pixels, rainbow, Color }, fs, { exec })=> {
     }
   };
 
-  wss.addListener('setLights', ({details, data})=> {
-    if (data.order.length == pixels.data.length) {
-      pixels.setEachRGB((val, ind)=>data.order[ind]);
-      pixels.show();
-    }
-  });
-
-  wss.addListener('shutdown', ({details, data})=> {
+  ws.addListener('shutdown', (data)=> {
     pixels.setIndicator([127, 0, 0]);
-    wss.broadcast('shutdown', { shutdown: true });
     setTimeout(()=> {
       exec('sudo shutdown now');
     }, 1000);
   });
 
-  wss.addListener('listConfigs', ({details, data})=> {
-    fs.readdir(configDir, (err, files) => {
-      console.log(files);
-      details.from.sendPacket('listConfigs', files.map((file)=>file.replace('.json', '')));
-      if (openedFile) details.from.sendPacket('currentConfig', {which: openedFile });
-    });
-  });
-
-  wss.addListener('deleteConfig', ({details, data})=> {
-    if (details.from.isAdmin) {
-      fs.unlink(configDir + '/' + data.which + '.json', (err, files) => {
-        console.log('Deleted ' + data.which);
-      });
-    }
-  });
-
-  wss.addListener('requestMIDIDevices', ({details, data})=> {
-    if (details.from.isAdmin) {
-      var mid = (data.type == 'input') ? midi.in : midi.out;
-      details.from.sendPacket('listMIDI', {
-        which: data.type,
-        devices: mid.devices.map((dev)=>dev.name),
-      });
-    }
-  });
-
-  wss.addListener('setMIDIDevice', ({details, data})=> {
-    if (details.from.isAdmin) {
-      var mid = (data.mode == 'input') ? midi.in : midi.out;
-      var newIn = null;
-      console.log(`Looking for ${data.name}`);
-      mid.devices.forEach((el)=> {
-        if (el.name == request.name && !newIn) {
-          newIn = el;
-          console.log(`Connecting to ${data.name}`);
-        }
-      });
-      midi.in.select(newIn);
-
-      if (!fs.existsSync(settingsDir)) {
-        fs.mkdirSync(settingsDir);
-      }
-
-      fs.writeFileSync(settingsDir + '/MIDI_Device.json', JSON.stringify(request));
-    }
-  });
-
-  wss.addListener('getConfiguration', ({details, data})=> {
-    //if (client === admin){
-    //// TODO: check if this actually still works
-    if (data.which == 'current') details.from.sendObject({
-      keyConfig: keyStyles,
-      serverChords: chords,
-    });
-    else {
-      let datum = fs.readFileSync(configDir + '/' + data.which + '.json'); //file exists, get the contents
-      var styles = JSON.parse(datum);
-      details.from.sendObject({
-        keyConfig: styles.keys,
-        serverChords: styles.chords,
-      });
-    }
-    //}
-  });
-
-  wss.addListener('setConfigByName', ({details, data})=> {
-    openedFile = data;
-    let datum = fs.readFileSync(configDir + '/' + data + '.json'); //file exists, get the contents
-    var styles = JSON.parse(datum);
+  ws.addListener('keyConfig', data=>{
     keyStyles = [];
-    styles.keys.forEach(function (cfg, ind, arr) {
+    console.log('got new key configs');
+    data.forEach(function (cfg, ind, arr) {
       cfg.color = new Color(cfg.color);
 
       keyStyles[ind] = cfg;
     });
+  });
 
+  ws.addListener('serverChords', data=>{
     chords = [];
-    styles.chords.forEach(function (chrd, ind, arr) {
+    data.forEach(function (chrd, ind, arr) {
       chords.push(new Chord(chrd.keys, chrd.config));
     });
-
-    console.log('Opened ' + openedFile);
-
-    wss.broadcast('currentConfig', {which: openedFile });
   });
 
-  wss.addListener('setConfiguration', ({details, data})=> {
-    if (details.from.isAdmin) {
-      if (data.load) {
-        keyStyles = [];
-        data.keys.forEach(function (cfg, ind, arr) {
-          cfg.color = new Color(cfg.color);
-
-          keyStyles[ind] = cfg;
-        });
-
-        chords = [];
-        data.chords.forEach(function (chrd, ind, arr) {
-          chords.push(new Chord(chrd.keys, chrd.config));
-        });
-
-        openedFile = data.filename;
-
-        wss.broadcast('currentConfig', {which: openedFile });
-      }
-
-      if (!fs.existsSync(configDir)) {
-        fs.mkdirSync(configDir);
-      }
-
-      let file = configDir + '/' + data.filename + '.json';
-      console.log(file);
-
-      fs.writeFileSync(file, JSON.stringify({ keys: keyStyles, chords: chords }));
-    }
-  });
-
-  wss.addListener('adminSession', ({details, data})=> {
-    if (data.password == 'password') {
-      console.log('admin connected');
-      details.from.isAdmin = true;
-    }
+  ws.addListener('currentConfig',(data)=>{
+    console.log('changed config');
+    ws.send('getConfiguration', {which: 'current'})
   });
 
   var setStyle = (set, key, which)=> {
@@ -348,19 +229,6 @@ obtain(obtains, (midi, { pixels, rainbow, Color }, fs, { exec })=> {
       else keyStyles[which][key] = set[key];
     }
   };
-
-  wss.addListener('keyMode', ({details, data})=> {
-    let set = data;
-    if (details.from.isAdmin) {
-      if (!set.range) {
-        for (var key in set) setStyle(set, key, set.key);
-      } else for (var key in set) {
-        for (var i = set.range.low; i < set.range.high + 1; i++) {
-          setStyle(set, key, i);
-        }
-      }
-    }
-  });
 
   var process = require('electron').remote.process;
 
@@ -376,52 +244,6 @@ obtain(obtains, (midi, { pixels, rainbow, Color }, fs, { exec })=> {
       pixels.setEachRGB(()=>[0, 0, 0]);
       pixels.show();
     }, 1000);
-
-    midi.in.onReady = ()=> {
-      var newIn = null;
-      midi.in.devices.forEach((el)=> {
-        if (!el.name.includes('Through') && !newIn) {
-          newIn = el;
-          console.log(el.name);
-        }
-      });
-      midi.in.select(newIn);
-
-      if (fs.existsSync(settingsDir + '/MIDI_Device.json')) {
-        let data = fs.readFileSync(settingsDir + '/MIDI_Device.json'); //file exists, get the contents
-        var request = JSON.parse(data);
-        var mid = (request.mode == 'input') ? midi.in : midi.out;
-        var newIn = null;
-        console.log(`Looking for ${request.name}`);
-        mid.devices.forEach((el)=> {
-          if (el.name == request.name && !newIn) {
-            newIn = el;
-            console.log(`Connecting to ${request.name}`);
-          }
-        });
-        midi.in.select(newIn);
-      }
-    };
-
-    midi.in.setNoteHandler((note, vel)=> {
-      if (note >= mkOff && note < mkOff + 88) {
-        //note -= 9;
-
-        //if (vel > 0) midi.out.playNote(note, 1);
-        //if (vel == 0) midi.out.playNote(note, 0);
-
-        //if (admin) admin.sendPacket({ notePressed: { note: note, vel: vel } });
-        wss.broadcast('notePressed', { note: note, vel: vel });
-
-        var s = vel / 127.;
-        noteHeld[note] = vel;
-
-        chords.forEach((chrd, i)=>chrd.check(note, vel));
-
-        setLightsFromConfig(keyStyles[note - mkOff], s, note - mkOff);
-
-      }
-    });
 
     document.onkeyup = (e)=> {
       if (e.which == 27) {
